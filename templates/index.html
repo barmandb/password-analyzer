@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Security Analyzer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Password Security Analyzer</h1>
+            <p class="subtitle">Check strength, detect weak patterns, estimate crack time, verify breach status, and generate secure passwords.</p>
+
+            <div class="input-group">
+                <input type="password" id="password" placeholder="Enter password">
+                <button id="toggleBtn" type="button">Show</button>
+            </div>
+
+            <div class="button-row">
+                <button id="analyzeBtn" type="button">Analyze Password</button>
+                <button id="generateBtn" type="button" class="secondary">Generate Secure Password</button>
+            </div>
+
+            <div id="result" class="hidden">
+                <div class="score-section">
+                    <div class="score-header">
+                        <span>Password Strength</span>
+                        <span id="strengthLabel">-</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                    <div class="score-text">Score: <span id="scoreValue">0</span>/100</div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h3>Estimated Crack Time</h3>
+                        <p id="crackTime">-</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>Breach Check</h3>
+                        <p id="breachStatus">-</p>
+                    </div>
+                </div>
+
+                <div class="details-card">
+                    <h3>Weak Patterns Detected</h3>
+                    <ul id="issuesList"></ul>
+                </div>
+
+                <div class="details-card">
+                    <h3>Suggestions to Improve</h3>
+                    <ul id="suggestionsList"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const passwordInput = document.getElementById("password");
+        const analyzeBtn = document.getElementById("analyzeBtn");
+        const generateBtn = document.getElementById("generateBtn");
+        const toggleBtn = document.getElementById("toggleBtn");
+        const resultBox = document.getElementById("result");
+
+        const strengthLabel = document.getElementById("strengthLabel");
+        const progressFill = document.getElementById("progressFill");
+        const scoreValue = document.getElementById("scoreValue");
+        const crackTime = document.getElementById("crackTime");
+        const breachStatus = document.getElementById("breachStatus");
+        const issuesList = document.getElementById("issuesList");
+        const suggestionsList = document.getElementById("suggestionsList");
+
+        toggleBtn.addEventListener("click", () => {
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                toggleBtn.textContent = "Hide";
+            } else {
+                passwordInput.type = "password";
+                toggleBtn.textContent = "Show";
+            }
+        });
+
+        generateBtn.addEventListener("click", async () => {
+            const response = await fetch("/generate");
+            const data = await response.json();
+            passwordInput.value = data.password;
+        });
+
+        analyzeBtn.addEventListener("click", async () => {
+            const formData = new FormData();
+            formData.append("password", passwordInput.value);
+
+            const response = await fetch("/analyze", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
+            resultBox.classList.remove("hidden");
+
+            strengthLabel.textContent = data.label;
+            scoreValue.textContent = data.score;
+            crackTime.textContent = data.crack_time;
+
+            progressFill.style.width = data.score + "%";
+            progressFill.className = "progress-fill";
+
+            if (data.label === "Weak") {
+                progressFill.classList.add("weak");
+            } else if (data.label === "Medium") {
+                progressFill.classList.add("medium");
+            } else {
+                progressFill.classList.add("strong");
+            }
+
+            if (data.breach_found === true) {
+                breachStatus.textContent = `Found in breaches ${data.breach_count.toLocaleString()} times`;
+                breachStatus.className = "danger-text";
+            } else if (data.breach_found === false) {
+                breachStatus.textContent = "Not found in known breaches";
+                breachStatus.className = "safe-text";
+            } else {
+                breachStatus.textContent = "Could not check breach status right now";
+                breachStatus.className = "warning-text";
+            }
+
+            issuesList.innerHTML = "";
+            if (data.issues.length === 0) {
+                issuesList.innerHTML = "<li>No obvious weak patterns found.</li>";
+            } else {
+                data.issues.forEach(issue => {
+                    const li = document.createElement("li");
+                    li.textContent = issue;
+                    issuesList.appendChild(li);
+                });
+            }
+
+            suggestionsList.innerHTML = "";
+            data.suggestions.forEach(suggestion => {
+                const li = document.createElement("li");
+                li.textContent = suggestion;
+                suggestionsList.appendChild(li);
+            });
+        });
+    </script>
+</body>
+</html>
