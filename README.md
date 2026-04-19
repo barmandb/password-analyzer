@@ -48,7 +48,7 @@ A modern **Flask-based Password Security Analyzer** that evaluates password stre
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/password-analyzer.git
+git clone https://github.com/barmandb/password-analyzer.git
 
 # Navigate into project
 cd password-analyzer
