@@ -37,11 +37,10 @@ A modern **Flask-based Password Security Analyzer** that evaluates password stre
 
 ### 🔹 Home UI
 
-![Home](screenshots/home.png)
-
+![Home](screenshots/home.png.png)
 ### 🔹 Password Analysis Result
 
-![Result](screenshots/result.png)
+![Result](screenshots/result.png.png)
 
 ---
 
